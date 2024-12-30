@@ -1,11 +1,12 @@
 pkgbase = cursor-bin
 	pkgdesc = Cursor App - AI-first coding environment
 	pkgver = 0.44.9
-	pkgrel = 1
+	pkgrel = 3
 	url = https://www.cursor.com/
 	arch = x86_64
 	license = custom:Proprietary
 	depends = fuse2
+	depends = gtk3
 	noextract = cursor-bin-0.44.9.AppImage
 	options = !strip
 	source_x86_64 = cursor-bin-0.44.9.AppImage::https://download.todesktop.com/230313mzl4w4u92/cursor-0.44.9-build-2412268nc6pfzgo-x86_64.AppImage
