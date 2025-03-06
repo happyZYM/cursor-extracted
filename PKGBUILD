@@ -1,8 +1,8 @@
-# Maintainer: Your Name <your.email@example.com>
+# Maintainer: Gunther Schulz <dev@guntherschulz.de>
 
 pkgname=cursor-bin
 pkgver=0.46.9
-pkgrel=3
+pkgrel=4
 pkgdesc="Cursor App - AI-first coding environment"
 arch=('x86_64')
 url="https://www.cursor.com/"
