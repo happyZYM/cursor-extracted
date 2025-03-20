@@ -1,7 +1,7 @@
 pkgbase = cursor-bin
 	pkgdesc = Cursor App - AI-first coding environment
 	pkgver = 0.47.8
-	pkgrel = 1
+	pkgrel = 2
 	url = https://www.cursor.com/
 	arch = x86_64
 	license = custom:Proprietary
@@ -9,7 +9,7 @@ pkgbase = cursor-bin
 	depends = gtk3
 	noextract = cursor-bin-0.47.8.AppImage
 	options = !strip
-	source_x86_64 = cursor-bin-0.47.8.AppImage::https://downloads.cursor.com/production/client/linux/x64/appimage/Cursor-0.47.8-82ef0f61c01d079d1b7e5ab04d88499d5af500e3.deb.glibc2.25-x86_64.AppImage
+	source_x86_64 = cursor-bin-0.47.8.AppImage::https://downloads.cursor.com/production/82ef0f61c01d079d1b7e5ab04d88499d5af500e3/linux/x64/Cursor-0.47.8-82ef0f61c01d079d1b7e5ab04d88499d5af500e3.deb.glibc2.25-x86_64.AppImage
 	source_x86_64 = cursor.png
 	source_x86_64 = cursor-bin.desktop.in
 	source_x86_64 = cursor-bin.sh
