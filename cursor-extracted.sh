@@ -7,5 +7,5 @@ if [[ -f $XDG_CONFIG_HOME/cursor-flags.conf ]]; then
   CURSOR_USER_FLAGS="$(sed 's/#.*//' $XDG_CONFIG_HOME/cursor-flags.conf | tr '\n' ' ')"
 fi
 
-# Launch
-exec /opt/cursor-bin/cursor-bin.AppImage "$@" $CURSOR_USER_FLAGS
+# Launch extracted cursor binary
+exec /opt/cursor-extracted/AppRun "$@" $CURSOR_USER_FLAGS
