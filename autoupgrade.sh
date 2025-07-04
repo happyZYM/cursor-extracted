@@ -126,6 +126,9 @@ print_info "Updated AppImage SHA512: $updated_sha512"
 print_success "Update completed successfully!"
 print_info "You can now run 'makepkg' to build the updated package."
 
+makepkg --printsrcinfo > .SRCINFO
+print_success "Updated .SRCINFO"
+
 git add PKGBUILD
 git commit -m "Automatically updated to version $updated_version"
 git push
