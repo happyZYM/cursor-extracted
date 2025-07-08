@@ -129,6 +129,6 @@ print_info "You can now run 'makepkg' to build the updated package."
 makepkg --printsrcinfo > .SRCINFO
 print_success "Updated .SRCINFO"
 
-git add PKGBUILD
+git add PKGBUILD .SRCINFO
 git commit -m "Automatically updated to version $updated_version"
 git push
