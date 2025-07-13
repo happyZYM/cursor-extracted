@@ -120,7 +120,7 @@ jobs:
         commit_author: '${{ github.repository_owner }} <${{ github.repository_owner }}@users.noreply.github.com>'
     
     - name: Create Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         tag_name: v${{ needs.check-and-update.outputs.latest_version }}
         name: 'Cursor ${{ needs.check-and-update.outputs.latest_version }}'
@@ -143,9 +143,6 @@ jobs:
           - `cursor-extracted-${{ needs.check-and-update.outputs.latest_version }}-1-x86_64.pkg.tar.zst`: Arch Linux package
         files: |
           ${{ steps.build-package.outputs.pkgfile }}
-        draft: false
-        prerelease: false
-        token: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Workflow Summary
       run: |
