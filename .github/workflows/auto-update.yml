@@ -53,6 +53,8 @@ jobs:
     needs: check-and-update
     if: needs.check-and-update.outputs.needs_update == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     
     steps:
     - name: Checkout repository
@@ -122,6 +124,7 @@ jobs:
     - name: Create Release
       uses: softprops/action-gh-release@v2
       with:
+        token: ${{ secrets.GITHUB_TOKEN }}
         tag_name: v${{ needs.check-and-update.outputs.latest_version }}
         name: 'Cursor ${{ needs.check-and-update.outputs.latest_version }}'
         body: |
