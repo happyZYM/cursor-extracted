@@ -90,6 +90,20 @@ jobs:
         old_sha512=$(grep "sha512sums_x86_64=" PKGBUILD | grep -oP "'\\K[^']*")
         sed -i "0,/${old_sha512}/{s/${old_sha512}/${new_sha512}/}" PKGBUILD
     
+    - name: Debug - List files
+      run: |
+        echo "Current directory: $(pwd)"
+        echo "Files in current directory:"
+        ls -la
+        echo "Required files check:"
+        for file in cursor.png cursor-extracted.desktop.in cursor-extracted.sh PKGBUILD; do
+          if [[ -f "$file" ]]; then
+            echo "✓ $file exists"
+          else
+            echo "✗ $file missing"
+          fi
+        done
+    
     - name: Build Arch Linux package
       uses: heyhusen/archlinux-package-action@v2
       with:
