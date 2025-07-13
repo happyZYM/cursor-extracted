@@ -1,0 +1,157 @@
+name: Auto Update and Release
+
+on:
+  schedule:
+    # 每天UTC+8的5:00运行，即UTC的21:00
+    - cron: '0 21 * * *'
+  workflow_dispatch:
+    # 支持手动触发
+    inputs:
+      force_update:
+        description: 'Force update even if no new version'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  check-and-update:
+    runs-on: ubuntu-latest
+    outputs:
+      needs_update: ${{ steps.check_update.outputs.needs_update }}
+      current_version: ${{ steps.check_update.outputs.current_version }}
+      latest_version: ${{ steps.check_update.outputs.latest_version }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Check for updates
+      id: check_update
+      run: |
+        # 获取当前版本
+        current_version=$(grep -oP '^pkgver=\K[^#]*' PKGBUILD | tr -d '"' | tr -d "'")
+        echo "current_version=$current_version" >> $GITHUB_OUTPUT
+        
+        # 获取最新版本
+        api_response=$(curl -s -L "https://www.cursor.com/api/download?platform=linux-x64&releaseTrack=latest")
+        latest_version=$(echo "$api_response" | jq -r '.version')
+        echo "latest_version=$latest_version" >> $GITHUB_OUTPUT
+        
+        # 检查是否需要更新
+        if [[ "$current_version" != "$latest_version" ]] || [[ "${{ github.event.inputs.force_update }}" == "true" ]]; then
+          echo "needs_update=true" >> $GITHUB_OUTPUT
+          echo "New version available: $current_version -> $latest_version"
+        else
+          echo "needs_update=false" >> $GITHUB_OUTPUT
+          echo "Already up to date: $current_version"
+        fi
+
+  update-and-build:
+    needs: check-and-update
+    if: needs.check-and-update.outputs.needs_update == 'true'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Update PKGBUILD manually
+      run: |
+        # 手动更新PKGBUILD而不使用autoupgrade.sh
+        latest_version="${{ needs.check-and-update.outputs.latest_version }}"
+        
+        # 获取下载URL和SHA512
+        api_response=$(curl -s -L "https://www.cursor.com/api/download?platform=linux-x64&releaseTrack=latest")
+        download_url=$(echo "$api_response" | jq -r '.downloadUrl')
+        
+        # 下载AppImage计算SHA512
+        temp_dir=$(mktemp -d)
+        appimage_file="$temp_dir/Cursor-${latest_version}-x86_64.AppImage"
+        curl -L -o "$appimage_file" "$download_url"
+        new_sha512=$(sha512sum "$appimage_file" | cut -d' ' -f1)
+        rm -rf "$temp_dir"
+        
+        # 更新PKGBUILD
+        sed -i "s/^pkgver=.*/pkgver=${latest_version}/" PKGBUILD
+        sed -i "s/^pkgrel=.*/pkgrel=1/" PKGBUILD
+        
+        # 更新production ID
+        production_id=$(echo "$download_url" | grep -oP 'production/\K[^/]+')
+        sed -i "s|production/[^/]*/|production/${production_id}/|" PKGBUILD
+        sed -i "s/Cursor-[0-9.]*-x86_64\.AppImage/Cursor-${latest_version}-x86_64.AppImage/g" PKGBUILD
+        
+        # 更新SHA512
+        old_sha512=$(grep "sha512sums_x86_64=" PKGBUILD | grep -oP "'\\K[^']*")
+        sed -i "0,/${old_sha512}/{s/${old_sha512}/${new_sha512}/}" PKGBUILD
+    
+    - name: Build Arch Linux package
+      uses: heyhusen/archlinux-package-action@v2
+      with:
+        flags: '-s --noconfirm'
+        namcap: false
+        srcinfo: true
+        updpkgsums: false
+    
+    - name: Commit and push changes
+      uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        commit_message: 'Auto-update to version ${{ needs.check-and-update.outputs.latest_version }}'
+        file_pattern: 'PKGBUILD .SRCINFO'
+        commit_user_name: ${{ github.repository_owner }}
+        commit_user_email: '${{ github.repository_owner }}@users.noreply.github.com'
+        commit_author: '${{ github.repository_owner }} <${{ github.repository_owner }}@users.noreply.github.com>'
+    
+    - name: Find built package
+      id: find_package
+      run: |
+        package_file=$(find . -name "*.pkg.tar.zst" -type f | head -1)
+        if [[ -z "$package_file" ]]; then
+          echo "No package file found!"
+          exit 1
+        fi
+        echo "package_file=$package_file" >> $GITHUB_OUTPUT
+        echo "Package built: $package_file"
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ needs.check-and-update.outputs.latest_version }}
+        name: 'Cursor ${{ needs.check-and-update.outputs.latest_version }}'
+        body: |
+          Auto-updated to Cursor version ${{ needs.check-and-update.outputs.latest_version }}
+          
+          **Installation:**
+          ```bash
+          # Download the .pkg.tar.zst file and install with:
+          sudo pacman -U cursor-extracted-${{ needs.check-and-update.outputs.latest_version }}-*.pkg.tar.zst
+          ```
+          
+          **Changes:**
+          - Updated to Cursor version ${{ needs.check-and-update.outputs.latest_version }}
+          - Package built automatically via GitHub Actions
+          - Repository: ${{ github.repository }}
+          - Maintainer: ${{ github.repository_owner }}
+          
+          **Files:**
+          - `cursor-extracted-${{ needs.check-and-update.outputs.latest_version }}-1-x86_64.pkg.tar.zst`: Arch Linux package
+        files: |
+          ${{ steps.find_package.outputs.package_file }}
+        draft: false
+        prerelease: false
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Workflow Summary
+      run: |
+        echo "=== Workflow Summary ==="
+        echo "Repository: ${{ github.repository }}"
+        echo "Repository owner: ${{ github.repository_owner }}"
+        echo "Triggered by: ${{ github.actor }}"
+        echo "Current version: ${{ needs.check-and-update.outputs.current_version }}"
+        echo "Latest version: ${{ needs.check-and-update.outputs.latest_version }}"
+        echo "Package built and released successfully!" 
