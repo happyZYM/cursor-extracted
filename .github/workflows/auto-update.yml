@@ -107,6 +107,7 @@ jobs:
     - name: Build Arch Linux package
       uses: heyhusen/archlinux-package-action@v2
       with:
+        path: '.'
         flags: '-s --noconfirm'
         namcap: false
         srcinfo: true
