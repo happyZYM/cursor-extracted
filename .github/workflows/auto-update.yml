@@ -131,29 +131,39 @@ jobs:
         ls -la
         echo ""
         
-        echo "Searching for .pkg.tar.zst files in entire filesystem..."
-        package_file=$(find / -name "*.pkg.tar.zst" -type f 2>/dev/null | grep -E "(cursor|cursor-extracted)" | head -1)
+        # 安装并更新 plocate
+        echo "Installing and updating plocate database..."
+        sudo apt update -qq
+        sudo apt install -y plocate
+        sudo updatedb
+        
+        echo "Using plocate to search for package files..."
+        package_file=$(plocate "*.pkg.tar.zst" 2>/dev/null | grep -E "(cursor|cursor-extracted)" | head -1)
         
         if [[ -z "$package_file" ]]; then
           echo "No .zst package found, trying .xz..."
-          package_file=$(find / -name "*.pkg.tar.xz" -type f 2>/dev/null | grep -E "(cursor|cursor-extracted)" | head -1)
+          package_file=$(plocate "*.pkg.tar.xz" 2>/dev/null | grep -E "(cursor|cursor-extracted)" | head -1)
         fi
         
         if [[ -z "$package_file" ]]; then
           echo "No specific package found, looking for any .pkg.tar files..."
-          package_file=$(find / -name "*.pkg.tar.*" -type f 2>/dev/null | head -1)
+          package_file=$(plocate "*.pkg.tar" 2>/dev/null | head -1)
         fi
         
         if [[ -z "$package_file" ]]; then
-          echo "=== No package file found! Detailed search results: ==="
-          echo "Looking in /home/runner/work/:"
-          find /home/runner/work/ -name "*.pkg.tar.*" -type f 2>/dev/null || echo "No files found in /home/runner/work/"
-          echo "Looking in /tmp/:"
-          find /tmp/ -name "*.pkg.tar.*" -type f 2>/dev/null || echo "No files found in /tmp/"
-          echo "Looking in current workspace:"
+          echo "=== No package file found with plocate! Fallback to find ==="
+          echo "Looking in current workspace with find:"
+          package_file=$(find . -name "*.pkg.tar.*" -type f 2>/dev/null | head -1)
+        fi
+        
+        if [[ -z "$package_file" ]]; then
+          echo "=== Still no package file found! Detailed search results: ==="
+          echo "plocate results for *.pkg.tar*:"
+          plocate "*.pkg.tar" 2>/dev/null | head -10 || echo "No pkg.tar files found with plocate"
+          echo "Current workspace files:"
           find . -name "*.pkg.tar.*" -type f 2>/dev/null || echo "No files found in current workspace"
-          echo "Looking for any files with 'cursor' in name:"
-          find / -name "*cursor*" -type f 2>/dev/null | head -10 || echo "No cursor files found"
+          echo "Files with 'cursor' in name:"
+          plocate "*cursor*" 2>/dev/null | head -10 || echo "No cursor files found"
           exit 1
         fi
         
