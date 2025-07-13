@@ -125,13 +125,40 @@ jobs:
     - name: Find built package
       id: find_package
       run: |
-        package_file=$(find . -name "*.pkg.tar.zst" -type f | head -1)
+        echo "=== Debug: Searching for built packages ==="
+        echo "Current directory: $(pwd)"
+        echo "All files in current directory:"
+        ls -la
+        echo ""
+        
+        echo "Searching for .pkg.tar.zst files in entire filesystem..."
+        package_file=$(find / -name "*.pkg.tar.zst" -type f 2>/dev/null | grep -E "(cursor|cursor-extracted)" | head -1)
+        
         if [[ -z "$package_file" ]]; then
-          echo "No package file found!"
+          echo "No .zst package found, trying .xz..."
+          package_file=$(find / -name "*.pkg.tar.xz" -type f 2>/dev/null | grep -E "(cursor|cursor-extracted)" | head -1)
+        fi
+        
+        if [[ -z "$package_file" ]]; then
+          echo "No specific package found, looking for any .pkg.tar files..."
+          package_file=$(find / -name "*.pkg.tar.*" -type f 2>/dev/null | head -1)
+        fi
+        
+        if [[ -z "$package_file" ]]; then
+          echo "=== No package file found! Detailed search results: ==="
+          echo "Looking in /home/runner/work/:"
+          find /home/runner/work/ -name "*.pkg.tar.*" -type f 2>/dev/null || echo "No files found in /home/runner/work/"
+          echo "Looking in /tmp/:"
+          find /tmp/ -name "*.pkg.tar.*" -type f 2>/dev/null || echo "No files found in /tmp/"
+          echo "Looking in current workspace:"
+          find . -name "*.pkg.tar.*" -type f 2>/dev/null || echo "No files found in current workspace"
+          echo "Looking for any files with 'cursor' in name:"
+          find / -name "*cursor*" -type f 2>/dev/null | head -10 || echo "No cursor files found"
           exit 1
         fi
+        
         echo "package_file=$package_file" >> $GITHUB_OUTPUT
-        echo "Package built: $package_file"
+        echo "Package found: $package_file"
     
     - name: Create Release
       uses: softprops/action-gh-release@v1
