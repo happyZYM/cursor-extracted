@@ -104,14 +104,11 @@ jobs:
           fi
         done
     
-    - name: Build Arch Linux package
-      uses: heyhusen/archlinux-package-action@v2
+    - name: Build Package
+      uses: ouuan/pkgbuild-action@master
+      id: build-package
       with:
-        path: '.'
-        flags: '-s --noconfirm'
-        namcap: false
-        srcinfo: true
-        updpkgsums: false
+        path: .
     
     - name: Commit and push changes
       uses: stefanzweifel/git-auto-commit-action@v5
@@ -121,54 +118,6 @@ jobs:
         commit_user_name: ${{ github.repository_owner }}
         commit_user_email: '${{ github.repository_owner }}@users.noreply.github.com'
         commit_author: '${{ github.repository_owner }} <${{ github.repository_owner }}@users.noreply.github.com>'
-    
-    - name: Find built package
-      id: find_package
-      run: |
-        echo "=== Debug: Searching for built packages ==="
-        echo "Current directory: $(pwd)"
-        echo "All files in current directory:"
-        ls -la
-        echo ""
-        
-        # 安装并更新 plocate
-        echo "Installing and updating plocate database..."
-        sudo apt update -qq
-        sudo apt install -y plocate
-        sudo updatedb
-        
-        echo "Using plocate to search for package files..."
-        package_file=$(plocate "*.pkg.tar.zst" 2>/dev/null | grep -E "(cursor|cursor-extracted)" | head -1)
-        
-        if [[ -z "$package_file" ]]; then
-          echo "No .zst package found, trying .xz..."
-          package_file=$(plocate "*.pkg.tar.xz" 2>/dev/null | grep -E "(cursor|cursor-extracted)" | head -1)
-        fi
-        
-        if [[ -z "$package_file" ]]; then
-          echo "No specific package found, looking for any .pkg.tar files..."
-          package_file=$(plocate "*.pkg.tar" 2>/dev/null | head -1)
-        fi
-        
-        if [[ -z "$package_file" ]]; then
-          echo "=== No package file found with plocate! Fallback to find ==="
-          echo "Looking in current workspace with find:"
-          package_file=$(find . -name "*.pkg.tar.*" -type f 2>/dev/null | head -1)
-        fi
-        
-        if [[ -z "$package_file" ]]; then
-          echo "=== Still no package file found! Detailed search results: ==="
-          echo "plocate results for *.pkg.tar*:"
-          plocate "*.pkg.tar" 2>/dev/null | head -10 || echo "No pkg.tar files found with plocate"
-          echo "Current workspace files:"
-          find . -name "*.pkg.tar.*" -type f 2>/dev/null || echo "No files found in current workspace"
-          echo "Files with 'cursor' in name:"
-          plocate "*cursor*" 2>/dev/null | head -10 || echo "No cursor files found"
-          exit 1
-        fi
-        
-        echo "package_file=$package_file" >> $GITHUB_OUTPUT
-        echo "Package found: $package_file"
     
     - name: Create Release
       uses: softprops/action-gh-release@v1
@@ -193,7 +142,7 @@ jobs:
           **Files:**
           - `cursor-extracted-${{ needs.check-and-update.outputs.latest_version }}-1-x86_64.pkg.tar.zst`: Arch Linux package
         files: |
-          ${{ steps.find_package.outputs.package_file }}
+          ${{ steps.build-package.outputs.pkgfile }}
         draft: false
         prerelease: false
         token: ${{ secrets.GITHUB_TOKEN }}
