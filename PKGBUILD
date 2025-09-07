@@ -1,7 +1,7 @@
 # Maintainer: Zhuang Yumin <zymx@pm.me>
 
 pkgname=cursor-extracted
-pkgver=1.5.10
+pkgver=1.5.11
 pkgrel=1
 pkgdesc="Cursor App - AI-first coding environment"
 arch=('x86_64')
@@ -10,9 +10,9 @@ license=('custom:Proprietary')  # Replace with the correct license if known
 depends=('gtk3' 'nss' 'alsa-lib')
 options=(!strip)
 _appimage="${pkgname}-${pkgver}.AppImage"
-source_x86_64=("${_appimage}::https://downloads.cursor.com/production/7ad52fff14641ec6373a31c19463856cace32640/linux/x64/Cursor-1.5.10-x86_64.AppImage" "cursor.png" "${pkgname}.desktop.in" "${pkgname}.sh")
+source_x86_64=("${_appimage}::https://downloads.cursor.com/production/2f2737de9aa376933d975ae30290447c910fdf46/linux/x64/Cursor-1.5.11-x86_64.AppImage" "cursor.png" "${pkgname}.desktop.in" "${pkgname}.sh")
 noextract=("${_appimage}")
-sha512sums_x86_64=('458cd45a1120880b3cc1d2ca502954a8434eaa7c7a7f74978d3c94102345ecfd80f1c90a02e9157d8515ea0d6015997edfaf394846775aeef0584d866adb8aff'
+sha512sums_x86_64=('3704661bf60b53b7e3ad1d14dd97769c0a5cc13d2242a90b152b96b3d6294b4c05666892e3b480bdad6e60be45766e0e832cde01003fc2397f14de679e687282'
                    'f948c5718c2df7fe2cae0cbcd95fd3010ecabe77c699209d4af5438215daecd74b08e03d18d07a26112bcc5a80958105fda724768394c838d08465fce5f473e7'
                    '813d42d46f2e6aad72a599c93aeb0b11a668ad37b3ba94ab88deec927b79c34edf8d927e7bb2140f9147b086562736c3f708242183130824dd74b7a84ece67aa'
                    '07557ecbce45aade220eeb1a7da0b7bc2fee56fe4cb06f9b151224c0a196b6c1bf2e6027e12f4dd76bf9c886ad9388a4a71fe5d6c43c3f36918067aa2748e889')
